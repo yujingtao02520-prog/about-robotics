@@ -1,0 +1,26 @@
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+.venv/
+**/.venv/
+runenv/
+**/runenv/
+
+# Downloaded datasets and generated artifacts
+data/
+outputs/
+**/data/
+**/outputs/
+*.hdf5
+*.h5
+*.pt
+*.pth
+*.ckpt
+wandb/
+**/wandb/
+
+# Local-only previous experiments; add them back deliberately when needed.
+/being_h07_tiny_demo/
+/robotic data/
+/desktop_screenshot.png
+
