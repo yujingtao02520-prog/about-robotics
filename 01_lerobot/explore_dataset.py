@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+"""Explore a LeRobot dataset before writing any policy or training code.
+
+This script is intentionally read-only: it downloads one episode, prints the
+action/observation structure, and optionally exports a replay GIF. The point is
+to understand the data contract first.
+"""
+
 import argparse
 import inspect
 import json
@@ -17,6 +24,12 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 
 
 def import_lerobot_dataset():
+    """Import LeRobotDataset across a few LeRobot package layouts.
+
+    LeRobot has moved modules between releases. Keeping the import logic here
+    makes the rest of the script version-agnostic and easier to read.
+    """
+
     candidates = (
         "lerobot.datasets.lerobot_dataset",
         "lerobot.common.datasets.lerobot_dataset",
@@ -41,10 +54,14 @@ def import_lerobot_dataset():
 
 
 def sanitize_repo_id(repo_id: str) -> str:
+    """Turn a Hugging Face repo id into a safe local folder/file stem."""
+
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", repo_id).strip("_")
 
 
 def to_builtin(value: Any) -> Any:
+    """Convert tensors/arrays/scalars into small printable Python values."""
+
     if hasattr(value, "detach"):
         value = value.detach().cpu()
         if value.numel() == 1:
@@ -60,6 +77,8 @@ def to_builtin(value: Any) -> Any:
 
 
 def compact_json(value: Any, limit: int = 180) -> str:
+    """Pretty-print feature metadata without flooding the terminal."""
+
     text = json.dumps(value, ensure_ascii=False, default=str)
     if len(text) > limit:
         return text[: limit - 3] + "..."
@@ -67,6 +86,8 @@ def compact_json(value: Any, limit: int = 180) -> str:
 
 
 def tensor_stats(value: Any) -> str:
+    """Return shape, dtype, range, and a short value preview for one field."""
+
     if hasattr(value, "detach"):
         tensor = value.detach().cpu()
         shape = list(tensor.shape)
@@ -113,6 +134,8 @@ def tensor_stats(value: Any) -> str:
 
 
 def print_section(title: str) -> None:
+    """Print a terminal section divider."""
+
     print()
     print("=" * 80)
     print(title)
@@ -120,6 +143,8 @@ def print_section(title: str) -> None:
 
 
 def print_features(dataset: Any) -> None:
+    """Show LeRobot feature metadata: keys, dtypes, shapes, fps, cameras."""
+
     features = getattr(dataset, "features", None)
     if not features:
         print("No dataset.features found.")
@@ -130,11 +155,15 @@ def print_features(dataset: Any) -> None:
 
 
 def print_sample(sample: dict[str, Any]) -> None:
+    """Print every key in one frame sample."""
+
     for key in sorted(sample):
         print(f"- {key}: {tensor_stats(sample[key])}")
 
 
 def print_key_group(title: str, sample: dict[str, Any], keys: list[str]) -> None:
+    """Print a named subset of sample keys, such as action or observation."""
+
     print_section(title)
     if not keys:
         print("No matching keys.")
@@ -144,6 +173,13 @@ def print_key_group(title: str, sample: dict[str, Any], keys: list[str]) -> None
 
 
 def as_image(value: Any) -> Image.Image | None:
+    """Convert an image-like LeRobot field into a PIL RGB image.
+
+    LeRobot image observations can arrive as PIL images, float tensors in
+    [0, 1], uint8 tensors in [0, 255], channel-first tensors, or channel-last
+    tensors. Replay code only needs a single normalized PIL representation.
+    """
+
     if isinstance(value, Image.Image):
         return value.convert("RGB")
 
@@ -151,11 +187,15 @@ def as_image(value: Any) -> Image.Image | None:
         return None
 
     tensor = value.detach().cpu()
+
+    # Some datasets return a batch-like image field. For replay we only need
+    # one frame, so take the first image.
     if tensor.ndim == 4:
         tensor = tensor[0]
     if tensor.ndim == 2:
         array = tensor.numpy()
     elif tensor.ndim == 3:
+        # Convert channel-first tensors [C, H, W] into PIL's [H, W, C].
         if tensor.shape[0] in (1, 3, 4) and tensor.shape[-1] not in (1, 3, 4):
             tensor = tensor.permute(1, 2, 0)
         array = tensor.numpy()
@@ -163,6 +203,7 @@ def as_image(value: Any) -> Image.Image | None:
         return None
 
     if np.issubdtype(array.dtype, np.floating):
+        # Most LeRobot image tensors are floats in [0, 1].
         if np.nanmax(array) <= 1.5:
             array = array * 255.0
         array = np.clip(array, 0, 255).astype(np.uint8)
@@ -179,6 +220,8 @@ def as_image(value: Any) -> Image.Image | None:
 
 
 def find_image_keys(sample: dict[str, Any]) -> list[str]:
+    """Find observation fields that can be decoded as images."""
+
     preferred = [
         key
         for key in sample
@@ -189,6 +232,8 @@ def find_image_keys(sample: dict[str, Any]) -> list[str]:
 
 
 def frame_label(sample: dict[str, Any], local_frame: int) -> str:
+    """Build a small overlay label for the replay GIF."""
+
     episode = to_builtin(sample.get("episode_index", "?"))
     frame = to_builtin(sample.get("frame_index", local_frame))
     timestamp = to_builtin(sample.get("timestamp", None))
@@ -204,6 +249,12 @@ def save_replay_gif(
     max_frames: int,
     stride: int,
 ) -> int:
+    """Decode image observations and save them as an animated GIF.
+
+    The function returns the number of frames written. It does not control a
+    robot or run a policy; it only visualizes the recorded demonstration.
+    """
+
     frames: list[Image.Image] = []
     total = len(dataset)
     indices = range(0, total, max(1, stride))
@@ -241,6 +292,8 @@ def save_replay_gif(
 
 
 def print_action_trace(dataset: Any, sample: dict[str, Any]) -> None:
+    """Print action/state snapshots from the start, middle, and end."""
+
     action_keys = [key for key in sample if key == "action" or key.startswith("action.")]
     state_keys = [key for key in sample if key.startswith("observation.state")]
     if not action_keys:
@@ -258,6 +311,8 @@ def print_action_trace(dataset: Any, sample: dict[str, Any]) -> None:
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse command-line options for the dataset exploration run."""
+
     parser = argparse.ArgumentParser(
         description="Download/read/replay a LeRobot dataset episode without training.",
     )
@@ -279,8 +334,13 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+
+    # On Windows, Hugging Face may warn about symlinks. The cache still works;
+    # this environment variable keeps the learning output focused.
     os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
+    # Store downloaded data inside this lesson by default. The folder is ignored
+    # by Git because dataset files can be large and are reproducible.
     root = args.root
     if root is None:
         root = SCRIPT_DIR / "data" / sanitize_repo_id(args.repo_id)
@@ -295,6 +355,8 @@ def main() -> None:
     print(f"episode: {args.episode}")
     print("mode: read-only dataset exploration, no policy/train/eval")
 
+    # Different LeRobot releases expose slightly different constructor
+    # arguments. Check the installed signature before passing optional fields.
     dataset_kwargs = {
         "repo_id": args.repo_id,
         "root": root,
@@ -311,6 +373,8 @@ def main() -> None:
         print("This LeRobot version does not expose return_uint8; using its default image dtype.")
 
     try:
+        # Constructing LeRobotDataset downloads missing files, then exposes each
+        # frame as a dictionary of tensors/metadata.
         dataset = LeRobotDataset(**dataset_kwargs)
     except Exception as exc:  # noqa: BLE001
         print("\nFailed to load the LeRobot dataset.", file=sys.stderr)
@@ -337,6 +401,9 @@ def main() -> None:
     if len(dataset) == 0:
         raise SystemExit("Selected episode has no frames.")
 
+    # One frame is enough to inspect the policy contract:
+    #   policy input  -> observation.*
+    #   policy output -> action
     sample = dataset[0]
 
     print_section("One sample")
@@ -362,6 +429,7 @@ def main() -> None:
         print("No image-like observation was found, so replay GIF was not created.")
         return
 
+    # Use the first decodable image observation as the replay camera.
     image_key = image_keys[0]
     output_name = f"{sanitize_repo_id(args.repo_id)}_episode_{args.episode:06d}.gif"
     output_path = SCRIPT_DIR / "outputs" / output_name
