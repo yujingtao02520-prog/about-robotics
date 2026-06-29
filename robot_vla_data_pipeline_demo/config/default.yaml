@@ -1,0 +1,56 @@
+paths:
+  raw_dir: data/raw
+  mock_dir: data/mock
+  mock_hdf5: data/mock/mock_robot_data.hdf5
+  processed_dir: data/processed
+  processed_episodes: data/processed/episodes.pkl
+  qa_report_csv: outputs/qa_reports/qa_report.csv
+  qa_summary_json: outputs/qa_reports/qa_summary.json
+  visualization_dir: outputs/visualizations
+  converted_dir: outputs/converted
+  checkpoint_dir: outputs/checkpoints
+  mlp_checkpoint: outputs/checkpoints/mlp_policy.pt
+  cnn_checkpoint: outputs/checkpoints/cnn_policy.pt
+  baseline_eval_csv: outputs/baseline_eval.csv
+
+mock:
+  seed: 42
+  num_episodes: 20
+  min_steps: 30
+  max_steps: 80
+  short_episode_steps: 6
+  image_height: 64
+  image_width: 64
+  state_dim: 10
+  action_dim: 7
+  fps: 10
+  robot: mock_franka
+  camera_names: ["front"]
+  tasks:
+    - pick up the red block
+    - open the drawer
+    - move the mug to the left
+    - place the object into the bowl
+
+qa:
+  action_spike_threshold: 3.0
+  min_episode_len: 10
+  expected_action_dim: 7
+  empty_rgb_pixel_sum_threshold: 0
+
+visualization:
+  default_episode_id: episode_000
+  fps: 8
+  max_frames: 80
+
+training:
+  seed: 7
+  epochs: 5
+  batch_size: 32
+  learning_rate: 0.001
+  val_ratio: 0.2
+  device: cpu
+  num_workers: 0
+
+evaluation:
+  batch_size: 64

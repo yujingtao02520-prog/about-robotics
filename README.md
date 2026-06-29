@@ -6,7 +6,8 @@
 
 - [robotics.md](robotics.md)
 
-当前第一个主题：
+当前主题：
 
 - [01 LeRobot](01_lerobot/README.md)
+- [Robot VLA 数据清洗与训练评测 Pipeline Demo](robot_vla_data_pipeline_demo/README.md)
 

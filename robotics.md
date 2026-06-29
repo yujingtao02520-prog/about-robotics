@@ -46,3 +46,40 @@ observation.image   shape = [3, 96, 96]
 
 下一步再进入 policy：先写一个最小策略接口，但仍然不急着训练。
 
+## Robot VLA 数据清洗与训练评测 Pipeline Demo
+
+这是一个完整但轻量级的 VLA 数据工程 demo，围绕 raw HDF5 episode 到统一 observation-action-language schema 的处理链路展开。
+
+当前已经完成：
+
+- 生成 LIBERO / RoboMimic 风格 mock HDF5 数据
+- 解析 episode 到统一 schema
+- 执行 QA 质量检查：语言缺失、动作突变、空图像、短轨迹、NaN/Inf、action 维度错误
+- 逐帧 episode GIF 可视化
+- 导出 LeRobot-like、ACT-like、OpenVLA-like 简化格式
+- 训练 MLP 与 CNN+MLP 两个 action prediction baseline
+- 输出 baseline 评估指标
+
+入口：
+
+- [robot_vla_data_pipeline_demo/README.md](robot_vla_data_pipeline_demo/README.md)
+- [robot_vla_data_pipeline_demo/docs/pipeline_design.md](robot_vla_data_pipeline_demo/docs/pipeline_design.md)
+- [robot_vla_data_pipeline_demo/docs/technical_report.md](robot_vla_data_pipeline_demo/docs/technical_report.md)
+
+复现命令：
+
+```powershell
+cd robot_vla_data_pipeline_demo
+pip install -r requirements.txt
+python scripts/generate_mock_data.py
+python scripts/parse_dataset.py --input data/mock/mock_robot_data.hdf5
+python scripts/run_qa.py --input data/processed/episodes.pkl
+python scripts/visualize_episode.py --episode_id episode_000
+python scripts/convert_formats.py --input data/processed/episodes.pkl --target all
+python scripts/train_baseline_mlp.py --input data/processed/episodes.pkl
+python scripts/train_baseline_cnn.py --input data/processed/episodes.pkl
+python scripts/evaluate_baselines.py
+```
+
+这个主题的重点不是训练真实 OpenVLA 大模型，而是把机器人 VLA 数据从 raw episode、schema、QA、visualization、format conversion、baseline training 到 evaluation report 的工程链路跑通。
+
