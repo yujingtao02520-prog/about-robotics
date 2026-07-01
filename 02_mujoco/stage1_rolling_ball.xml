@@ -1,0 +1,24 @@
+<mujoco model="stage1_rolling_ball">
+  <compiler angle="degree"/>
+  <option timestep="0.002" gravity="0 0 -9.81"/>
+
+  <default>
+    <geom friction="1.2 0.005 0.0001"/>
+  </default>
+
+  <asset>
+    <texture name="grid" type="2d" builtin="checker" rgb1="0.15 0.18 0.16" rgb2="0.27 0.31 0.28" width="300" height="300"/>
+    <material name="grid" texture="grid" texrepeat="6 4" reflectance="0.12"/>
+  </asset>
+
+  <worldbody>
+    <light name="key" pos="0 -3 4" dir="0 1 -1"/>
+    <camera name="demo" pos="0 -2.5 0.85" xyaxes="1 0 0 0 0 1"/>
+    <geom name="floor" type="plane" size="2.0 1.2 0.02" material="grid"/>
+
+    <body name="ball" pos="-0.8 0 0.13">
+      <freejoint name="ball_free"/>
+      <geom name="ball_geom" type="sphere" size="0.12" mass="0.5" rgba="0.22 0.58 0.95 1"/>
+    </body>
+  </worldbody>
+</mujoco>

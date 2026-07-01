@@ -1,0 +1,28 @@
+<mujoco model="stage2_single_pendulum">
+  <compiler angle="degree"/>
+  <option timestep="0.002" gravity="0 0 -9.81"/>
+
+  <asset>
+    <texture name="grid" type="2d" builtin="checker" rgb1="0.16 0.17 0.19" rgb2="0.27 0.29 0.31" width="300" height="300"/>
+    <material name="grid" texture="grid" texrepeat="4 4" reflectance="0.15"/>
+  </asset>
+
+  <worldbody>
+    <light name="key" pos="0 -3 4" dir="0 1 -1"/>
+    <camera name="demo" pos="0 -2.5 1.1" xyaxes="1 0 0 0 0 1"/>
+    <geom name="floor" type="plane" size="1.5 1.5 0.02" material="grid"/>
+
+    <body name="pendulum" pos="0 0 1.05">
+      <joint name="hinge" type="hinge" axis="0 1 0" damping="0.08"/>
+      <geom name="pivot" type="sphere" size="0.04" rgba="0.93 0.24 0.22 1"/>
+      <geom name="arm" type="capsule" fromto="0 0 0 0 0 -0.72" size="0.025" mass="0.25" rgba="0.20 0.46 0.95 1"/>
+      <body name="bob" pos="0 0 -0.80">
+        <geom name="bob_geom" type="sphere" size="0.09" mass="0.75" rgba="0.96 0.74 0.20 1"/>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <motor name="hinge_motor" joint="hinge" gear="1.0" ctrllimited="true" ctrlrange="-4 4"/>
+  </actuator>
+</mujoco>

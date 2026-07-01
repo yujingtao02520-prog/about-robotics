@@ -1,0 +1,35 @@
+<mujoco model="stage2_two_link_arm">
+  <compiler angle="degree"/>
+  <option timestep="0.002" gravity="0 0 0"/>
+
+  <asset>
+    <texture name="grid" type="2d" builtin="checker" rgb1="0.14 0.17 0.18" rgb2="0.24 0.29 0.30" width="300" height="300"/>
+    <material name="grid" texture="grid" texrepeat="5 5" reflectance="0.12"/>
+  </asset>
+
+  <worldbody>
+    <light name="key" pos="0 -2.5 3" dir="0 1 -1"/>
+    <camera name="demo" pos="0 -2.2 1.25" xyaxes="1 0 0 0 0 1"/>
+    <geom name="floor" type="plane" pos="0 0 -0.03" size="1.2 1.2 0.02" material="grid"/>
+
+    <site name="target" type="sphere" pos="0.55 0.25 0.08" size="0.045" rgba="0.95 0.25 0.22 0.85"/>
+
+    <body name="link1" pos="0 0 0.08">
+      <joint name="shoulder" type="hinge" axis="0 0 1" damping="0.15"/>
+      <geom name="shoulder_pivot" type="sphere" size="0.045" rgba="0.95 0.95 0.95 1"/>
+      <geom name="link1_geom" type="capsule" fromto="0 0 0 0.45 0 0" size="0.035" mass="0.45" rgba="0.20 0.46 0.95 1"/>
+
+      <body name="link2" pos="0.45 0 0">
+        <joint name="elbow" type="hinge" axis="0 0 1" damping="0.12"/>
+        <geom name="elbow_pivot" type="sphere" size="0.04" rgba="0.95 0.95 0.95 1"/>
+        <geom name="link2_geom" type="capsule" fromto="0 0 0 0.35 0 0" size="0.03" mass="0.35" rgba="0.94 0.67 0.19 1"/>
+        <site name="end_effector" type="sphere" pos="0.35 0 0" size="0.04" rgba="0.20 0.95 0.55 1"/>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <motor name="shoulder_motor" joint="shoulder" gear="1.0" ctrllimited="true" ctrlrange="-5 5"/>
+    <motor name="elbow_motor" joint="elbow" gear="1.0" ctrllimited="true" ctrlrange="-5 5"/>
+  </actuator>
+</mujoco>
